@@ -1,79 +1,65 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // ดึงส่วนประกอบต่างๆ จากหน้าจอ HTML มาไว้ในตัวแปร
     const imageElement = document.getElementById("story-image");
     const textElement = document.getElementById("story-text");
     const inputElement = document.getElementById("user-input");
     const sendBtn = document.getElementById("send-btn");
 
-    // เตรียมข้อมูลจำลอง (Mock Data) สมมติว่าเป็นคำตอบที่ได้จาก Jem
-    const mockResponses = [
-        {
-            text: "เป้ตกใจสุดขีด กระโดดหลบไปด้านข้างด้วยความว่องไว ปล่อยให้ตาลพุ่งทะยานข้ามรถบะหมี่ไปหน้าคะมำกับพุ่มไม้ดัดรูปช้างอย่างจัง! สมุดเลคเชอร์กระจายเต็มพื้น",
-            imageUrl: "https://via.placeholder.com/600x400/ffe6e6/333333?text=Manga+Panel+1:+Pae+dodging,+Taan+flying"
-        },
-        {
-            text: "ตาลโมโหจัดที่เป้ห่วงรถมากกว่าคน เธอคว้าก้อนหินปาใส่เป้สุดแรง แต่ก้อนหินดันพลาดไปโดนกระจกรถบะหมี่แตกละเอียด! เป้ยืนอ้าปากค้างช็อกสุดขีด",
-            imageUrl: "https://via.placeholder.com/600x400/e6f2ff/333333?text=Manga+Panel+2:+Rock+shattering+car+mirror"
-        },
-        {
-            text: "เป้ฟิวส์ขาด กระโดดกะจะถีบตาล แต่ตาลหลบทัน ทำให้เป้พุ่งเข้าไปเสียบคาพุ่มไม้ดัดแทน โผล่มาแค่ขาสองข้างชี้ฟ้า ส่วนตาลรีบสับเกียร์หมาวิ่งหนีไปเลย!",
-            imageUrl: "https://via.placeholder.com/600x400/e6ffe6/333333?text=Manga+Panel+3:+Pae+stuck+in+bush,+Taan+running"
-        }
-    ];
-
-    let currentTurn = 0;
-
-    // ฟังก์ชันสำหรับจัดการเมื่อกดปุ่มส่งคำสั่ง
-    function handleAction() {
+    async function handleAction() {
         const userCommand = inputElement.value.trim();
-        if (userCommand === "") return; // ถ้าไม่ได้พิมพ์อะไรให้หยุดทำงาน
+        if (userCommand === "") return;
 
-        // 1. แสดงสิ่งที่ผู้ใช้พิมพ์ลงไปในหน้าจอ และปิดปุ่มชั่วคราว
+        // 1. แสดงสิ่งที่ผู้ใช้พิมพ์ และปิดปุ่มชั่วคราว
         textElement.innerHTML += `<br><br><b>คุณสั่งการ:</b> <i>"${userCommand}"</i>`;
         inputElement.value = "";
         inputElement.disabled = true;
         sendBtn.disabled = true;
 
-        // 2. แสดงสถานะกำลังโหลด (จำลองว่า AI กำลังเจนรูป)
-        const loadingHtml = `<br><br><span id="loading-text" style="color:#007bff;">⏳ Jem กำลังแต่งเรื่องและวาดภาพ...</span>`;
+        // 2. แสดงสถานะกำลังโหลด
+        const loadingHtml = `<br><br><span id="loading-text" style="color:#007bff;">⏳ Jem ตัวจริงกำลังคิดเนื้อเรื่อง...</span>`;
         textElement.innerHTML += loadingHtml;
-        imageElement.src = "https://via.placeholder.com/600x400/cccccc/666666?text=Generating+Next+Scene...";
+        imageElement.src = "https://via.placeholder.com/600x400/cccccc/666666?text=AI+is+thinking...";
         
-        // เลื่อนหน้าจอลงมาล่างสุด
         const storyBox = document.querySelector('.story-content');
         storyBox.scrollTop = storyBox.scrollHeight;
 
-        // 3. จำลองการรอ API (หน่วงเวลา 2 วินาที)
-        setTimeout(() => {
-            // ลบข้อความกำลังโหลดออก
+        try {
+            // 3. วิ่งไปเคาะประตูห้องลับ (Vercel Backend)
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: userCommand })
+            });
+
+            const data = await response.json();
             document.getElementById("loading-text").remove();
 
-            // ดึงข้อมูล Mockup มาแสดง (วนลูป 3 ฉากที่เตรียมไว้)
-            const reply = mockResponses[currentTurn % mockResponses.length];
-            currentTurn++;
-
-            // แสดงเรื่องราวและรูปภาพใหม่
-            textElement.innerHTML += `<br><br><b>เรื่องราว:</b> ${reply.text}`;
-            imageElement.src = reply.imageUrl;
-
-            // เปิดให้พิมพ์คำสั่งต่อไปได้
-            inputElement.disabled = false;
-            sendBtn.disabled = false;
-            inputElement.focus();
+            // 4. แกะกล่องของขวัญที่เจม (Gemini) ส่งกลับมา
+            let aiResponseText = data.candidates[0].content.parts[0].text;
             
-            // เลื่อนหน้าจอลงมาล่างสุดอีกครั้ง
-            storyBox.scrollTop = storyBox.scrollHeight;
+            // ลบเครื่องหมายครอบ JSON ออก (ถ้ามี) เพื่อป้องกัน Error
+            aiResponseText = aiResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
+            const result = JSON.parse(aiResponseText);
 
-        }, 2000); // 2000 มิลลิวินาที = 2 วินาที
+            // 5. แสดงเนื้อเรื่องใหม่
+            textElement.innerHTML += `<br><br><b>เรื่องราว:</b> ${result.text}`;
+            
+            // แสดง Prompt ภาษาอังกฤษในรูป (รอเชื่อม API วาดรูปของจริง)
+            imageElement.src = `https://via.placeholder.com/600x400/e6f2ff/333333?text=Prompt:+${encodeURIComponent(result.imagePrompt)}`;
+
+        } catch (error) {
+            document.getElementById("loading-text").remove();
+            textElement.innerHTML += `<br><br><b style="color:red;">เกิดข้อผิดพลาด: ไม่สามารถเชื่อมต่อสมอง AI ได้</b>`;
+        }
+
+        // เปิดให้พิมพ์คำสั่งต่อไปได้
+        inputElement.disabled = false;
+        sendBtn.disabled = false;
+        inputElement.focus();
+        storyBox.scrollTop = storyBox.scrollHeight;
     }
 
-    // สั่งให้ปุ่มทำงานเมื่อถูกคลิก
     sendBtn.addEventListener("click", handleAction);
-
-    // สั่งให้ทำงานเมื่อกดปุ่ม Enter บนคีย์บอร์ด
     inputElement.addEventListener("keypress", (event) => {
-        if (event.key === "Enter") {
-            handleAction();
-        }
+        if (event.key === "Enter") handleAction();
     });
 });
