@@ -13,11 +13,16 @@ document.addEventListener("DOMContentLoaded", () => {
         inputElement.disabled = true;
         sendBtn.disabled = true;
 
+        // แสดง loading ข้อความ
         const loadingSpan = document.createElement("span");
         loadingSpan.id = "loading-text";
         loadingSpan.style.color = "#007bff";
         loadingSpan.innerHTML = "<br><br>⏳ Jem ตัวจริงกำลังคิดเนื้อเรื่อง...";
         textElement.appendChild(loadingSpan);
+
+        // แสดง loading รูป
+        imageElement.style.opacity = "0.3";
+        imageElement.alt = "🎨 กำลังวาดภาพมังงะ...";
 
         const storyBox = document.querySelector('.story-content');
         if (storyBox) storyBox.scrollTop = storyBox.scrollHeight;
@@ -31,15 +36,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const data = await response.json();
 
-            // ลบ loading
+            // ลบ loading ข้อความ
             document.getElementById("loading-text")?.remove();
 
-            // API ส่ง { text, imagePrompt } กลับมาตรงๆ แล้ว
+            // แสดงเนื้อเรื่อง
             textElement.innerHTML += `<br><br><b>เรื่องราว:</b> ${data.text}`;
-            imageElement.src = `https://placehold.co/600x400/e6f2ff/333333?text=${encodeURIComponent(data.imagePrompt)}`;
+
+            // สร้างรูปมังงะจาก Pollinations.ai
+            const mangaPrompt = `manga style, black and white, anime, ${data.imagePrompt}`;
+            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(mangaPrompt)}?width=600&height=400&nologo=true&seed=${Date.now()}`;
+
+            imageElement.style.opacity = "0.3";
+            imageElement.src = imageUrl;
+
+            imageElement.onload = () => {
+                imageElement.style.opacity = "1";
+                imageElement.alt = "manga panel";
+            };
+
+            imageElement.onerror = () => {
+                imageElement.style.opacity = "1";
+                imageElement.alt = "โหลดรูปไม่สำเร็จ";
+            };
 
         } catch (error) {
             document.getElementById("loading-text")?.remove();
+            imageElement.style.opacity = "1";
             textElement.innerHTML += `<br><br><b style="color:red;">เกิดข้อผิดพลาด: ไม่สามารถเชื่อมต่อสมอง AI ได้</b>`;
         }
 
