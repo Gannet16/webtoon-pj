@@ -1,11 +1,10 @@
 export default async function handler(req, res) {
     try {
-        const apiKey = process.env.GROQ_API_KEY;
-        if (!apiKey) {
-            return res.status(500).json({ error: "ไม่พบ GROQ_API_KEY ใน Vercel" });
-        }
+        const apiKey = "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";
 
         const userMessage = req.body.message || "สวัสดี";
+
+        const combinedPrompt = `[คำสั่งสำหรับ AI: คุณคือผู้คุมเกมแนวโรแมนติกคอมเมดี้ ตัวละครหลักคือ เป้ กับ ตาล เมื่อผู้ใช้พิมพ์คำสั่ง ให้คุณตอบกลับเป็น JSON เท่านั้น ห้ามใส่ backtick หรือ markdown ใดๆ ตอบแค่ JSON ดิบๆ ที่มี 2 ส่วนคือ 1. text: เนื้อเรื่องตอนต่อไปภาษาไทย 2. imagePrompt: ภาษาอังกฤษสำหรับวาดภาพฉากนั้น]\n\nคำสั่งจากผู้ใช้: ${userMessage}`;
 
         const response = await fetch(
             "https://api.groq.com/openai/v1/chat/completions",
@@ -17,14 +16,31 @@ export default async function handler(req, res) {
                 },
                 body: JSON.stringify({
                     model: "llama-3.3-70b-versatile",
-                    temperature: 0.7, // เพิ่มจินตนาการให้นิยายสนุกขึ้น
-                    messages: [
-                        { 
-                            // แอบกระซิบกติกาให้ AI รู้ตัวเดียว (ไม่ให้ปนกับคำสั่งผู้ใช้)
-                            role: "system", 
-                            content: "คุณคือผู้คุมเกมสวมบทบาทแนวโรแมนติกคอมเมดี้ ตัวละครหลักคือ 'เป้' (ชายหนุ่มกวนๆ) กับ 'ตาล' (หญิงสาวน่ารัก) หน้าที่คุณคือแต่งเนื้อเรื่องตอนต่อไปตามที่ผู้ใช้ออกคำสั่งให้สนุกและตลกขบขัน\n\n**ข้อบังคับสูงสุด:** ให้ตอบกลับเป็น JSON ดิบๆ เท่านั้น ห้ามอธิบายกติกาซ้ำ ห้ามมีข้อความอื่นนอกวงเล็บปีกกา ห้ามใช้ Markdown (
-http://googleusercontent.com/immersive_entry_chip/0
+                    messages: [{ role: "user", content: combinedPrompt }]
+                })
+            }
+        );
 
-3. กด **Commit changes...** 4. รอ Vercel อัปเดต 1 นาที แล้วกลับไปกดรีเฟรช (F5) พิมพ์คำสั่งทดสอบใหม่ได้เลยครับ!
+        const data = await response.json();
 
-รอบนี้รับรองว่าเนื้อเรื่องจะออกมาเป็นนิยายจริงๆ ไม่มีคำว่า "คุณคือผู้คุมเกม..." โผล่มาให้รกตาแล้วครับ ส่วนรูปภาพก็ทำงานได้สุดยอดมากครับ มาเป็นสไตล์อนิเมะเท่ๆ เลย! ลองดูนะครับคุณเป้! 🚀
+        if (!response.ok) {
+            return res.status(response.status).json({ error: "Groq API Error", details: data });
+        }
+
+        // ลอก backtick และ markdown ออก แล้ว parse เป็น JSON
+        let raw = data.choices?.[0]?.message?.content || "{}";
+        raw = raw.replace(/```json/g, "").replace(/```/g, "").trim();
+
+        let parsed;
+        try {
+            parsed = JSON.parse(raw);
+        } catch (e) {
+            parsed = { text: raw, imagePrompt: "" };
+        }
+
+        return res.status(200).json(parsed);
+
+    } catch (error) {
+        return res.status(500).json({ error: "ระบบเซิร์ฟเวอร์ขัดข้อง", details: error.message });
+    }
+}
