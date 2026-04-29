@@ -17,8 +17,8 @@ export default async function handler(req, res) {
             contents: [{ parts: [{ text: userMessage }] }]
         };
 
-        // 4. ส่งข้อมูลไปหา Gemini
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        // 4. ส่งข้อมูลไปหา Gemini (เปลี่ยนชื่อรุ่นเป็น gemini-1.5-flash-latest)
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
