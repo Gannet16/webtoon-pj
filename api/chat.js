@@ -1,53 +1,44 @@
-const https = require('https');
-
-module.exports = function (req, res) {
+export default async function handler(req, res) {
     try {
-        const userMessage = req.body.message;
+        // 1. รับข้อความ (ถ้า Vercel แกะมาให้แล้วก็ใช้เลย ถ้ายังก็แกะเอง)
+        const userMessage = req.body.message || "สวัสดี";
+        
+        // 2. เช็กกุญแจ API
         const apiKey = process.env.GEMINI_API_KEY;
-
         if (!apiKey) {
-            return res.status(500).json({ error: "หา API Key ไม่เจอใน Vercel!" });
+            return res.status(500).json({ error: "ไม่พบกุญแจ API ใน Vercel" });
         }
 
-        const postData = JSON.stringify({
-            systemInstruction: { 
+        // 3. เตรียมคำสั่งส่งหา Gemini
+        const payload = {
+            system_instruction: { 
                 parts: [{ text: "คุณคือผู้คุมเกมแนวโรแมนติกคอมเมดี้ ตัวละครหลักคือ เป้ กับ ตาล เมื่อผู้ใช้พิมพ์คำสั่ง ให้คุณตอบกลับเป็น JSON ที่มี 2 ส่วนคือ 1. text: เนื้อเรื่องตอนต่อไปภาษาไทย 2. imagePrompt: ภาษาอังกฤษสำหรับวาดภาพฉากนั้น" }]
             },
             contents: [{ parts: [{ text: userMessage }] }]
-        });
-
-        const options = {
-            hostname: 'generativelanguage.googleapis.com',
-            port: 443,
-            path: `/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                // สำคัญมาก: ป้องกัน Error เวลานับความยาวตัวอักษรภาษาไทย
-                'Content-Length': Buffer.byteLength(postData)
-            }
         };
 
-        const request = https.request(options, (response) => {
-            let rawData = '';
-            response.on('data', (chunk) => { rawData += chunk; });
-            response.on('end', () => {
-                const parsedData = JSON.parse(rawData);
-                if (response.statusCode !== 200) {
-                    return res.status(500).json({ error: "Gemini ปฏิเสธคำสั่ง", details: parsedData });
-                }
-                res.status(200).json(parsedData);
-            });
+        // 4. วิ่งไปหา Gemini
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
         });
 
-        request.on('error', (error) => {
-            res.status(500).json({ error: "พังตอนส่งข้อมูลไปหา Gemini", details: error.message });
-        });
+        // 5. อ่านข้อมูลกลับมาเป็น "ข้อความดิบ" ก่อน (กันระบบช็อก)
+        const rawText = await response.text();
 
-        request.write(postData);
-        request.end();
+        // 6. ค่อยๆ แปลงข้อความดิบเป็น JSON แบบปลอดภัย
+        let data;
+        try {
+            data = JSON.parse(rawText);
+        } catch (err) {
+            return res.status(500).json({ error: "Gemini ส่งข้อมูลผิดรูปแบบ", details: rawText });
+        }
+
+        // 7. ส่งเนื้อเรื่องกลับไปที่หน้าเว็บ!
+        return res.status(200).json(data);
 
     } catch (error) {
-        res.status(500).json({ error: "ระบบพังกลางทาง", details: error.message });
+        return res.status(500).json({ error: "ระบบพังกลางทาง", details: error.message });
     }
-};
+}
