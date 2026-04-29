@@ -16,8 +16,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const loadingSpan = document.createElement("span");
         loadingSpan.id = "loading-text";
         loadingSpan.style.color = "#007bff";
-        loadingSpan.innerHTML = "<br><br>⏳ Jem ตัวจริงกำลังคิดเนื้อเรื่อง...";
+        loadingSpan.innerHTML = "<br><br>⏳ ระบบกำลังคิดเนื้อเรื่องและวาดภาพ...";
         textElement.appendChild(loadingSpan);
+
+        // ให้รูปภาพแสดงสถานะว่ากำลังวาดรูป
+        imageElement.src = "https://placehold.co/600x400/cccccc/666666?text=Drawing+Image...";
 
         const storyBox = document.querySelector('.story-content');
         if (storyBox) storyBox.scrollTop = storyBox.scrollHeight;
@@ -34,13 +37,17 @@ document.addEventListener("DOMContentLoaded", () => {
             // ลบ loading
             document.getElementById("loading-text")?.remove();
 
-            // API ส่ง { text, imagePrompt } กลับมาตรงๆ แล้ว
+            // แสดงเนื้อเรื่องภาษาไทย
             textElement.innerHTML += `<br><br><b>เรื่องราว:</b> ${data.text}`;
-            imageElement.src = `https://placehold.co/600x400/e6f2ff/333333?text=${encodeURIComponent(data.imagePrompt)}`;
+            
+            // 🎨 ปลุกเสกรูปภาพของจริงด้วย Pollinations.ai
+            imageElement.src = `https://image.pollinations.ai/prompt/${encodeURIComponent(data.imagePrompt)}?width=600&height=400&nologo=true`;
 
         } catch (error) {
             document.getElementById("loading-text")?.remove();
             textElement.innerHTML += `<br><br><b style="color:red;">เกิดข้อผิดพลาด: ไม่สามารถเชื่อมต่อสมอง AI ได้</b>`;
+            // ถ้า Error ให้กลับไปแสดงรูปเทาๆ
+            imageElement.src = "https://placehold.co/600x400/ffcccc/ff0000?text=Error";
         }
 
         inputElement.disabled = false;
