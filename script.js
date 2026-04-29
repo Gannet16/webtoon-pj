@@ -8,22 +8,21 @@ document.addEventListener("DOMContentLoaded", () => {
         const userCommand = inputElement.value.trim();
         if (userCommand === "") return;
 
-        // 1. แสดงสิ่งที่ผู้ใช้พิมพ์ และปิดปุ่มชั่วคราว
         textElement.innerHTML += `<br><br><b>คุณสั่งการ:</b> <i>"${userCommand}"</i>`;
         inputElement.value = "";
         inputElement.disabled = true;
         sendBtn.disabled = true;
 
-        // 2. แสดงสถานะกำลังโหลด
-        const loadingHtml = `<br><br><span id="loading-text" style="color:#007bff;">⏳ Jem ตัวจริงกำลังคิดเนื้อเรื่อง...</span>`;
-        textElement.innerHTML += loadingHtml;
-        imageElement.src = "https://via.placeholder.com/600x400/cccccc/666666?text=AI+is+thinking...";
-        
+        const loadingSpan = document.createElement("span");
+        loadingSpan.id = "loading-text";
+        loadingSpan.style.color = "#007bff";
+        loadingSpan.innerHTML = "<br><br>⏳ Jem ตัวจริงกำลังคิดเนื้อเรื่อง...";
+        textElement.appendChild(loadingSpan);
+
         const storyBox = document.querySelector('.story-content');
-        storyBox.scrollTop = storyBox.scrollHeight;
+        if (storyBox) storyBox.scrollTop = storyBox.scrollHeight;
 
         try {
-            // 3. วิ่งไปเคาะประตูห้องลับ (Vercel Backend)
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -31,31 +30,23 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             const data = await response.json();
-            document.getElementById("loading-text").remove();
 
-            // 4. แกะกล่องของขวัญที่เจม (Gemini) ส่งกลับมา
-            let aiResponseText = data.candidates[0].content.parts[0].text;
-            
-            // ลบเครื่องหมายครอบ JSON ออก (ถ้ามี) เพื่อป้องกัน Error
-            aiResponseText = aiResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
-            const result = JSON.parse(aiResponseText);
+            // ลบ loading
+            document.getElementById("loading-text")?.remove();
 
-            // 5. แสดงเนื้อเรื่องใหม่
-            textElement.innerHTML += `<br><br><b>เรื่องราว:</b> ${result.text}`;
-            
-            // แสดง Prompt ภาษาอังกฤษในรูป (รอเชื่อม API วาดรูปของจริง)
-            imageElement.src = `https://via.placeholder.com/600x400/e6f2ff/333333?text=Prompt:+${encodeURIComponent(result.imagePrompt)}`;
+            // API ส่ง { text, imagePrompt } กลับมาตรงๆ แล้ว
+            textElement.innerHTML += `<br><br><b>เรื่องราว:</b> ${data.text}`;
+            imageElement.src = `https://placehold.co/600x400/e6f2ff/333333?text=${encodeURIComponent(data.imagePrompt)}`;
 
         } catch (error) {
-            document.getElementById("loading-text").remove();
+            document.getElementById("loading-text")?.remove();
             textElement.innerHTML += `<br><br><b style="color:red;">เกิดข้อผิดพลาด: ไม่สามารถเชื่อมต่อสมอง AI ได้</b>`;
         }
 
-        // เปิดให้พิมพ์คำสั่งต่อไปได้
         inputElement.disabled = false;
         sendBtn.disabled = false;
         inputElement.focus();
-        storyBox.scrollTop = storyBox.scrollHeight;
+        if (storyBox) storyBox.scrollTop = storyBox.scrollHeight;
     }
 
     sendBtn.addEventListener("click", handleAction);
