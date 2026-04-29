@@ -4,7 +4,13 @@ export default async function handler(req, res) {
 
         const userMessage = req.body.message || "สวัสดี";
 
-        const combinedPrompt = `[คำสั่งสำหรับ AI: คุณคือผู้คุมเกมแนวโรแมนติกคอมเมดี้ ตัวละครหลักคือ เป้ กับ ตาล เมื่อผู้ใช้พิมพ์คำสั่ง ให้คุณตอบกลับเป็น JSON เท่านั้น ห้ามใส่ backtick หรือ markdown ใดๆ ตอบแค่ JSON ดิบๆ ที่มี 2 ส่วนคือ 1. text: เนื้อเรื่องตอนต่อไปภาษาไทย 2. imagePrompt: ภาษาอังกฤษสำหรับวาดภาพฉากนั้น]\n\nคำสั่งจากผู้ใช้: ${userMessage}`;
+        const combinedPrompt = `[คำสั่งสำหรับ AI: คุณคือผู้คุมเกมแนวโรแมนติกคอมเมดี้ ตัวละครหลักคือ เป้ (ผู้ชายผมดำ) กับ ตาล (ผู้หญิงผมยาว) 
+เมื่อผู้ใช้พิมพ์คำสั่ง ให้ตอบกลับเป็น JSON เท่านั้น ห้ามใส่ backtick หรือ markdown ใดๆ
+JSON มี 2 ส่วน:
+1. "text": เนื้อเรื่องตอนต่อไปภาษาไทย 2-3 ประโยค
+2. "imagePrompt": บรรยายฉากนั้นเป็นภาษาอังกฤษแบบละเอียด ระบุ: ตัวละครทำอะไร อยู่ที่ไหน อารมณ์ของฉาก สีหน้า ท่าทาง เช่น "a black-haired teenage boy running away through school corridor, looking embarrassed, a long-haired girl chasing him with a coffee cup, dynamic action pose, school background"]
+
+คำสั่งจากผู้ใช้: ${userMessage}`;
 
         const response = await fetch(
             "https://api.groq.com/openai/v1/chat/completions",
@@ -27,7 +33,6 @@ export default async function handler(req, res) {
             return res.status(response.status).json({ error: "Groq API Error", details: data });
         }
 
-        // ลอก backtick และ markdown ออก แล้ว parse เป็น JSON
         let raw = data.choices?.[0]?.message?.content || "{}";
         raw = raw.replace(/```json/g, "").replace(/```/g, "").trim();
 
