@@ -3,24 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jem Interactive Manga</title>
+    <title>ลับแล: ปฏิบัติการรุ่งอรุณสยาม</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="app-container">
+        <header>
+            <h1>ลับแล: ปฏิบัติการรุ่งอรุณสยาม</h1>
+        </header>
+
         <div class="manga-panel">
-            <img id="story-image" src="https://via.placeholder.com/600x400?text=Manga+Panel+Loading..." alt="Manga Panel">
+            <img id="story-image" src="https://placehold.co/600x400/0a192f/64ffda?text=The+Time+Rift" alt="Manga Panel">
         </div>
 
-        <div class="story-content">
-            <p id="story-text">
-                เป้กำลังยืนเช็ดรถบะหมี่อย่างตั้งใจ แต่ทันใดนั้น ตาลก็วิ่งสะดุดรากไม้พุ่งตรงมาทางเขา!
-            </p>
-        </div>
-
-        <div class="interaction-area">
-            <input type="text" id="user-input" placeholder="พิมพ์คำสั่งให้ตัวละครทำอะไรต่อไปดี...">
-            <button id="send-btn">ส่งคำสั่ง</button>
+        <div class="interaction-zone">
+            <div class="story-content" id="story-content">
+                <p id="story-text">หน่วยพยัคฆ์ทมิฬ นำโดย ผู้กองกฤษณ์ เดินฝ่าพายุฝนจนพลัดหลงเข้ามาในป่าลับแลที่มีหมอกสีฟ้าเรืองแสง เบื้องหน้าของพวกเขาคือวิหารศิลาแลงโบราณที่กำลังแผ่พลังงานประหลาดออกมา...</p>
+            </div>
+            
+            <div class="input-area">
+                <input type="text" id="user-input" placeholder="พิมพ์คำสั่งให้ผู้กองกฤษณ์ทำอะไรต่อไปดี...">
+                <button id="send-btn">ส่งคำสั่ง</button>
+            </div>
         </div>
     </div>
 
