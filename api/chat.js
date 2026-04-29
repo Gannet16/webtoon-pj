@@ -7,15 +7,15 @@ export default async function handler(req, res) {
 
         const userMessage = req.body.message || "สวัสดี";
 
-        // 1. ใช้คำสั่งแบบมีขีดล่าง (system_instruction)
+        // ท่าไม้ตาย: ยุบรวมคำสั่งคุมเกมและคำสั่งผู้ใช้ไว้ในข้อความก้อนเดียวเลย!
+        const combinedPrompt = `[คำสั่งสำหรับ AI: คุณคือผู้คุมเกมแนวโรแมนติกคอมเมดี้ ตัวละครหลักคือ เป้ กับ ตาล เมื่อผู้ใช้พิมพ์คำสั่ง ให้คุณตอบกลับเป็น JSON ที่มี 2 ส่วนคือ 1. text: เนื้อเรื่องตอนต่อไปภาษาไทย 2. imagePrompt: ภาษาอังกฤษสำหรับวาดภาพฉากนั้น]\n\nคำสั่งจากผู้ใช้: ${userMessage}`;
+
         const payload = {
-            system_instruction: { 
-                parts: [{ text: "คุณคือผู้คุมเกมแนวโรแมนติกคอมเมดี้ ตัวละครหลักคือ เป้ กับ ตาล เมื่อผู้ใช้พิมพ์คำสั่ง ให้คุณตอบกลับเป็น JSON ที่มี 2 ส่วนคือ 1. text: เนื้อเรื่องตอนต่อไปภาษาไทย 2. imagePrompt: ภาษาอังกฤษสำหรับวาดภาพฉากนั้น" }]
-            },
-            contents: [{ parts: [{ text: userMessage }] }]
+            // ส่งไปแค่ contents ก้อนเดียวเพียวๆ ไม่มี system_instruction ให้ Google งงอีกแล้ว!
+            contents: [{ parts: [{ text: combinedPrompt }] }]
         };
 
-        // 2. ใช้ลิงก์เวอร์ชัน v1 (Official) ที่หารุ่น AI เจอแน่นอน
+        // ใช้ v1 และ gemini-1.5-flash ที่มันหาเจอแน่ๆ
         const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
