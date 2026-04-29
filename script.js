@@ -1,52 +1,74 @@
-export default async function handler(req, res) {
-    try {
-        const apiKey = "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";
+document.addEventListener("DOMContentLoaded", () => {
+    const imageElement = document.getElementById("story-image");
+    const textElement = document.getElementById("story-text");
+    const inputElement = document.getElementById("user-input");
+    const sendBtn = document.getElementById("send-btn");
 
-        const userMessage = req.body.message || "สวัสดี";
+    async function handleAction() {
+        const userCommand = inputElement.value.trim();
+        if (userCommand === "") return;
 
-        const combinedPrompt = `คุณคือผู้คุมเกมแนวโรแมนติกคอมเมดี้ ตัวละครหลักคือ เป้ (ผู้ชาย ผมดำ) กับ ตาล (ผู้หญิง ผมยาว)
-เมื่อผู้ใช้พิมพ์คำสั่ง ให้ตอบกลับเป็น JSON เท่านั้น ห้ามใส่ backtick หรือ markdown ใดๆ
+        textElement.innerHTML += `<br><br><b>คุณสั่งการ:</b> <i>"${userCommand}"</i>`;
+        inputElement.value = "";
+        inputElement.disabled = true;
+        sendBtn.disabled = true;
 
-JSON ต้องมี 2 field:
-1. "text": เนื้อเรื่องตอนต่อไป ภาษาไทย 2-3 ประโยค
-2. "imagePrompt": บรรยายฉากนั้นเป็นภาษาอังกฤษ ให้ละเอียดมาก ระบุ: ใครทำอะไร อยู่ที่ไหน อารมณ์ของตัวละคร ท่าทาง สีหน้า เช่น "a black-haired boy running away in a school hallway, looking embarrassed, a long-haired girl chasing him with a smile"
+        const loadingSpan = document.createElement("span");
+        loadingSpan.id = "loading-text";
+        loadingSpan.style.color = "#007bff";
+        loadingSpan.innerHTML = "<br><br>⏳ Jem ตัวจริงกำลังคิดเนื้อเรื่อง...";
+        textElement.appendChild(loadingSpan);
 
-คำสั่งจากผู้ใช้: ${userMessage}`;
+        imageElement.style.opacity = "0.3";
+        imageElement.alt = "🎨 กำลังวาดภาพมังงะ...";
 
-        const response = await fetch(
-            "https://api.groq.com/openai/v1/chat/completions",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${apiKey}`
-                },
-                body: JSON.stringify({
-                    model: "llama-3.3-70b-versatile",
-                    messages: [{ role: "user", content: combinedPrompt }]
-                })
-            }
-        );
+        const storyBox = document.querySelector('.story-content');
+        if (storyBox) storyBox.scrollTop = storyBox.scrollHeight;
 
-        const data = await response.json();
-
-        if (!response.ok) {
-            return res.status(response.status).json({ error: "Groq API Error", details: data });
-        }
-
-        let raw = data.choices?.[0]?.message?.content || "{}";
-        raw = raw.replace(/```json/g, "").replace(/```/g, "").trim();
-
-        let parsed;
         try {
-            parsed = JSON.parse(raw);
-        } catch (e) {
-            parsed = { text: raw, imagePrompt: "" };
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: userCommand })
+            });
+
+            const data = await response.json();
+
+            document.getElementById("loading-text")?.remove();
+
+            textElement.innerHTML += `<br><br><b>เรื่องราว:</b> ${data.text}`;
+
+            // prompt มังงะที่ละเอียดขึ้น
+            const mangaPrompt = `manga panel, black and white, detailed, ${data.imagePrompt}, 2 characters, expressive faces, dynamic composition`;
+            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(mangaPrompt)}?width=600&height=400&nologo=true&seed=${Date.now()}`;
+
+            imageElement.style.opacity = "0.3";
+            imageElement.src = imageUrl;
+
+            imageElement.onload = () => {
+                imageElement.style.opacity = "1";
+                imageElement.alt = "manga panel";
+            };
+
+            imageElement.onerror = () => {
+                imageElement.style.opacity = "1";
+                imageElement.alt = "โหลดรูปไม่สำเร็จ";
+            };
+
+        } catch (error) {
+            document.getElementById("loading-text")?.remove();
+            imageElement.style.opacity = "1";
+            textElement.innerHTML += `<br><br><b style="color:red;">เกิดข้อผิดพลาด: ไม่สามารถเชื่อมต่อสมอง AI ได้</b>`;
         }
 
-        return res.status(200).json(parsed);
-
-    } catch (error) {
-        return res.status(500).json({ error: "ระบบเซิร์ฟเวอร์ขัดข้อง", details: error.message });
+        inputElement.disabled = false;
+        sendBtn.disabled = false;
+        inputElement.focus();
+        if (storyBox) storyBox.scrollTop = storyBox.scrollHeight;
     }
-}
+
+    sendBtn.addEventListener("click", handleAction);
+    inputElement.addEventListener("keypress", (event) => {
+        if (event.key === "Enter") handleAction();
+    });
+});
