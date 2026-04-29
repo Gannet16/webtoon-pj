@@ -1,22 +1,22 @@
 export default async function handler(req, res) {
     try {
-        const apiKey = process.env.GEMINI_API_KEY?.trim(); // ใส่ trim() เผื่อคุณเป้เผลอก๊อปช่องว่างติดมาตอนใส่กุญแจ
+        const apiKey = process.env.GEMINI_API_KEY?.trim();
         if (!apiKey) {
             return res.status(500).json({ error: "ไม่พบกุญแจ GEMINI_API_KEY ใน Vercel" });
         }
 
         const userMessage = req.body.message || "สวัสดี";
 
+        // ต้องมี "ขีดล่าง" (system_instruction) เท่านั้นครับ!
         const payload = {
-            // แก้ไขเป็น systemInstruction (ตัว I ใหญ่ ไม่มีขีดล่าง) ตามมาตรฐาน Official
-            systemInstruction: { 
+            system_instruction: { 
                 parts: [{ text: "คุณคือผู้คุมเกมแนวโรแมนติกคอมเมดี้ ตัวละครหลักคือ เป้ กับ ตาล เมื่อผู้ใช้พิมพ์คำสั่ง ให้คุณตอบกลับเป็น JSON ที่มี 2 ส่วนคือ 1. text: เนื้อเรื่องตอนต่อไปภาษาไทย 2. imagePrompt: ภาษาอังกฤษสำหรับวาดภาพฉากนั้น" }]
             },
             contents: [{ parts: [{ text: userMessage }] }]
         };
 
-        // เปลี่ยนลิงก์เป็นเวอร์ชัน v1 (Official) และใช้ชื่อรุ่นมาตรฐาน gemini-1.5-flash
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        // ใช้ v1beta และชื่อรุ่น gemini-1.5-flash ถูกต้องตามมาตรฐานเป๊ะครับ
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -24,7 +24,6 @@ export default async function handler(req, res) {
 
         const data = await response.json();
 
-        // ดัก Error จากฝั่ง Google ให้แสดงข้อความชัดเจน
         if (!response.ok) {
             return res.status(response.status).json({ error: "Google API Error", details: data });
         }
