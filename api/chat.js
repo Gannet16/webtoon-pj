@@ -1,31 +1,34 @@
 export default async function handler(req, res) {
     try {
-        // 1. เช็กกุญแจ API 
-        const apiKey = process.env.GEMINI_API_KEY;
+        const apiKey = process.env.GEMINI_API_KEY?.trim(); // ใส่ trim() เผื่อคุณเป้เผลอก๊อปช่องว่างติดมาตอนใส่กุญแจ
         if (!apiKey) {
             return res.status(500).json({ error: "ไม่พบกุญแจ GEMINI_API_KEY ใน Vercel" });
         }
 
-        // 2. รับคำสั่งจากหน้าเว็บ
         const userMessage = req.body.message || "สวัสดี";
 
-        // 3. เตรียมข้อมูลคำสั่งส่งหา Gemini
         const payload = {
-            system_instruction: { 
+            // แก้ไขเป็น systemInstruction (ตัว I ใหญ่ ไม่มีขีดล่าง) ตามมาตรฐาน Official
+            systemInstruction: { 
                 parts: [{ text: "คุณคือผู้คุมเกมแนวโรแมนติกคอมเมดี้ ตัวละครหลักคือ เป้ กับ ตาล เมื่อผู้ใช้พิมพ์คำสั่ง ให้คุณตอบกลับเป็น JSON ที่มี 2 ส่วนคือ 1. text: เนื้อเรื่องตอนต่อไปภาษาไทย 2. imagePrompt: ภาษาอังกฤษสำหรับวาดภาพฉากนั้น" }]
             },
             contents: [{ parts: [{ text: userMessage }] }]
         };
 
-        // 4. ส่งข้อมูลไปหา Gemini (เปลี่ยนชื่อรุ่นเป็น gemini-1.5-flash-latest)
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
+        // เปลี่ยนลิงก์เป็นเวอร์ชัน v1 (Official) และใช้ชื่อรุ่นมาตรฐาน gemini-1.5-flash
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
-        // 5. รับผลลัพธ์และส่งกลับหน้าเว็บ
         const data = await response.json();
+
+        // ดัก Error จากฝั่ง Google ให้แสดงข้อความชัดเจน
+        if (!response.ok) {
+            return res.status(response.status).json({ error: "Google API Error", details: data });
+        }
+
         return res.status(200).json(data);
 
     } catch (error) {
