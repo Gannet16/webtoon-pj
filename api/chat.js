@@ -1,13 +1,22 @@
 export default async function handler(req, res) {
     try {
         const apiKey = process.env.GROQ_API_KEY;
-        const userMessage = req.body.message || "สำรวจพื้นที่";
+        const userMessage = req.body.message || "ผู้กองกฤษณ์นำหน่วยพยัคฆ์ทมิฬเดินฝ่าพายุฝนเข้าไปในหุบเขาที่ไม่มีในแผนที่";
 
         const combinedPrompt = `คุณคือผู้คุมเกมแนว Sci-Fi Fantasy เรื่อง "ลับแล: ปฏิบัติการรุ่งอรุณสยาม"
 แกนเรื่อง: หน่วยปฏิบัติการพิเศษ "พยัคฆ์ทมิฬ" นำโดย "ผู้กองกฤษณ์" หลุดข้ามมิติเวลาผ่านวิหารศิลาแลงและหมอกสีฟ้าเรืองแสง ไปโผล่ในยุคอยุธยาศตวรรษที่ 18
 
 ตอบกลับเป็น JSON เท่านั้น ห้ามใส่ backtick หรือ markdown ใดๆ รูปแบบ:
-{"text":"เนื้อเรื่องภาษาไทย 2-3 ประโยค","imagePrompt":"English scene description"}
+{
+  "text": "เนื้อเรื่อง 2-3 ประโยค บรรยากาศเข้มข้น ลึกลับ ตื่นเต้น จบด้วยการเปิดประตูให้ผู้อ่านตัดสินใจ",
+  "choices": ["ตัวเลือกที่ 1", "ตัวเลือกที่ 2", "ตัวเลือกที่ 3"],
+  "imagePrompt": "English scene description แบบละเอียด"
+}
+
+กฎการสร้างตัวเลือก:
+- ให้ 3 ตัวเลือกที่สมเหตุสมผลกับสถานการณ์
+- แต่ละตัวเลือกต้องนำไปสู่ผลลัพธ์ที่แตกต่างกัน
+- เขียนสั้นๆ ชัดเจน เช่น "ดึงอาวุธและเตรียมสู้" / "ซ่อนตัวรอดูสถานการณ์" / "เดินหน้าต่อด้วยความระวัง"
 
 คำสั่งจากผู้ใช้: ${userMessage}`;
 
@@ -40,7 +49,7 @@ export default async function handler(req, res) {
         try {
             parsed = JSON.parse(raw);
         } catch (e) {
-            parsed = { text: raw, imagePrompt: "Thai warrior in mystical ancient forest" };
+            parsed = { text: raw, choices: [], imagePrompt: "Thai warrior in mystical ancient forest" };
         }
 
         return res.status(200).json(parsed);
