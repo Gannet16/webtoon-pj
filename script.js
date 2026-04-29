@@ -20,7 +20,6 @@ document.addEventListener("DOMContentLoaded", () => {
         textElement.appendChild(loadingSpan);
 
         imageElement.style.opacity = "0.3";
-        imageElement.alt = "🎨 กำลังสร้างภาพฉากปฏิบัติการ...";
 
         const storyBox = document.getElementById("story-content");
         if (storyBox) storyBox.scrollTop = storyBox.scrollHeight;
@@ -38,11 +37,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             textElement.innerHTML += `<br><br>${data.text}`;
 
-            // prompt สไตล์ Sci-Fi Fantasy มังงะ
             const mangaPrompt = `manga panel, black and white, highly detailed, ${data.imagePrompt}, cinematic lighting, dramatic shadows, sci-fi historical fantasy, dynamic composition, expressive faces`;
             const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(mangaPrompt)}?width=600&height=400&nologo=true&seed=${Date.now()}`;
 
-            imageElement.style.opacity = "0.3";
             imageElement.src = imageUrl;
 
             imageElement.onload = () => {
@@ -51,3 +48,24 @@ document.addEventListener("DOMContentLoaded", () => {
             };
 
             imageElement.onerror = () => {
+                imageElement.style.opacity = "1";
+                imageElement.alt = "โหลดรูปไม่สำเร็จ";
+            };
+
+        } catch (error) {
+            document.getElementById("loading-text")?.remove();
+            imageElement.style.opacity = "1";
+            textElement.innerHTML += `<br><br><b style="color:red;">เกิดข้อผิดพลาด: ไม่สามารถเชื่อมต่อระบบได้</b>`;
+        }
+
+        inputElement.disabled = false;
+        sendBtn.disabled = false;
+        inputElement.focus();
+        if (storyBox) storyBox.scrollTop = storyBox.scrollHeight;
+    }
+
+    sendBtn.addEventListener("click", handleAction);
+    inputElement.addEventListener("keypress", (event) => {
+        if (event.key === "Enter") handleAction();
+    });
+});
