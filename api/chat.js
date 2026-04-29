@@ -1,17 +1,13 @@
 export default async function handler(req, res) {
     try {
-        // ดึง API Key จาก Vercel Environment Variables เพื่อความปลอดภัย
         const apiKey = process.env.GROQ_API_KEY;
+        const userMessage = req.body.message || "สำรวจพื้นที่";
 
-        const userMessage = req.body.message || "ผู้กองกฤษณ์นำหน่วยพยัคฆ์ทมิฬเดินฝ่าพายุฝนเข้าไปในหุบเขาที่ไม่มีในแผนที่";
+        const combinedPrompt = `คุณคือผู้คุมเกมแนว Sci-Fi Fantasy เรื่อง "ลับแล: ปฏิบัติการรุ่งอรุณสยาม"
+แกนเรื่อง: หน่วยปฏิบัติการพิเศษ "พยัคฆ์ทมิฬ" นำโดย "ผู้กองกฤษณ์" หลุดข้ามมิติเวลาผ่านวิหารศิลาแลงและหมอกสีฟ้าเรืองแสง ไปโผล่ในยุคอยุธยาศตวรรษที่ 18
 
-        // แกนเรื่องใหม่: ลับแล ปฏิบัติการรุ่งอรุณสยาม
-        const combinedPrompt = `[คำสั่งสำหรับ AI: คุณคือผู้คุมเกมแนว Sci-Fi Fantasy อิงประวัติศาสตร์ เรื่อง "ลับแล: ปฏิบัติการรุ่งอรุณสยาม" 
-แกนเรื่อง: หน่วยปฏิบัติการพิเศษ "พยัคฆ์ทมิฬ" จากยุคปัจจุบัน นำโดย "ผู้กองกฤษณ์" หลุดข้ามมิติเวลาผ่านวิหารศิลาแลงและหมอกสีฟ้าเรืองแสง ไปโผล่ในยุคอยุธยาศตวรรษที่ 18 ที่กำลังเกิดสงคราม
-เมื่อผู้ใช้พิมพ์คำสั่ง ให้ตอบกลับเป็น JSON เท่านั้น ห้ามใส่ backtick หรือ markdown ใดๆ
-JSON ต้องมี 2 ส่วน:
-1. "text": เนื้อเรื่องตอนต่อไปภาษาไทย 2-3 ประโยค บรรยายความตื่นเต้น การปะทะระหว่างอาวุธยุคปัจจุบันกับทหารโบราณ หรือความลี้ลับของป่าควอนตัม
-2. "imagePrompt": บรรยายฉากนั้นเป็นภาษาอังกฤษแบบละเอียดมาก ระบุ: ตัวละครทำอะไร อยู่ที่ไหน อารมณ์ สีหน้า ท่าทาง และบรรยากาศ เช่น "Captain Krit in modern tactical gear and assault rifle, standing in a dense mystical forest with glowing blue quantum fog, ancient Thai temple ruins in the background, cinematic lighting, epic sci-fi historical fantasy concept art"]
+ตอบกลับเป็น JSON เท่านั้น ห้ามใส่ backtick หรือ markdown ใดๆ รูปแบบ:
+{"text":"เนื้อเรื่องภาษาไทย 2-3 ประโยค","imagePrompt":"English scene description"}
 
 คำสั่งจากผู้ใช้: ${userMessage}`;
 
@@ -25,7 +21,8 @@ JSON ต้องมี 2 ส่วน:
                 },
                 body: JSON.stringify({
                     model: "llama-3.3-70b-versatile",
-                    messages: [{ role: "user", content: combinedPrompt }]
+                    messages: [{ role: "user", content: combinedPrompt }],
+                    response_format: { type: "json_object" }
                 })
             }
         );
@@ -36,7 +33,6 @@ JSON ต้องมี 2 ส่วน:
             return res.status(response.status).json({ error: "Groq API Error", details: data });
         }
 
-        // ลอก backtick และ markdown ออก แล้ว parse เป็น JSON
         let raw = data.choices?.[0]?.message?.content || "{}";
         raw = raw.replace(/```json/g, "").replace(/```/g, "").trim();
 
@@ -44,7 +40,7 @@ JSON ต้องมี 2 ส่วน:
         try {
             parsed = JSON.parse(raw);
         } catch (e) {
-            parsed = { text: raw, imagePrompt: "" };
+            parsed = { text: raw, imagePrompt: "Thai warrior in mystical ancient forest" };
         }
 
         return res.status(200).json(parsed);
